@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>I don't know, you tell me</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <link rel="stylesheet" href="https://awwapp.com/static/widget/css/toolbar_style.css">
+</head>
+<body>
+    <!-- Whiteboard -->
+    <div id="aww-wrapper" class="aww" style="height: 100%; width: 100%;">
+        <!-- Element in which the whiteboard will be shown
+                    – modify style as needed -->
+    </div>
+
+    <button id="start"></button>
+
+
+
+
+
+    <script src="https://awwapp.com/static/widget/js/aww3.min.js"></script>
+    <script>
+            var aww = new AwwBoard('#aww-wrapper', {
+                apiKey: '646056bb-36e7-401d-a3af-1d4c2346711a',
+                autojoin: true,
+                sizes: [3, 5, 8, 13, 20],
+                fontSizes: [10, 12, 16, 22, 30],
+                menuOrder: ['colors', 'sizes', 'tools', 'admin',
+                'utils'],
+                tools: ['pencil', 'eraser', 'text', 'image'],
+                colors: [ "#000000", "#f44336", "#4caf50", "#2196f3",
+                "#ffc107", "#9c27b0",     "#e91e63", "#795548"],
+                defaultColor: "#000000",
+                defaultSize: 8,
+                defaultTool: 'pencil',
+            });
+            aww.joinBoard('test-Jam')
+        
+    </script>
+    <script>
+        var voiceData = [];
+        console.log('hi');
+        var socket = io();
+        var context = new AudioContext();
+        var enable = false;
+        var isPlaying = false;
+
+        document.getElementById('start').onclick = function() {
+            enable = true;
+        }
+
+
+        socket.on('radio-receiver', function (arrayBuffer) {
+            console.log(arrayBuffer);
+            var blob = new Blob([arrayBuffer], { 'type' : 'audio/ogg; codecs=opus' });
+            var audio = document.createElement('audio');
+            audio.src = window.URL.createObjectURL(blob);
+            if(enable){
+                
+                context.resume();
+                if(!isPlaying){
+                    isPlaying = true;
+                    audio.play().then(() => isPlaying = false);
+                }
+                
+                
+            }
+
+            
+            
+        })
+
+        function play() {
+            console.log('play')
+            console.log(buf);
+            var source = context.createBufferSource();
+            source.buffer = buf;
+            source.connect(context.destination);
+            source.loop = false;
+            console.log(source);
+            source.start();
+            
+        }
+
+        function playByteArray(bytes) {
+            var arrayBuffer = new ArrayBuffer(bytes.length);
+            var buffer = new Uint8Array(arrayBuffer);
+            for (i = 0; i < bytes.length; i++) {
+                buffer[i] = bytes[i];
+            }
+
+            console.log(buffer);
+            console.log(bytes);
+
+            // var blob = new Blob([buffer.buffer], { 'type' : 'audio/wav; codecs=0' });
+            // const dataUrl = URL.createObjectURL(blob);
+            // console.log(dataUrl);
+            // console.log(blob);
+            // var a = document.createElement("a");
+            // document.body.appendChild(a);
+            // a.style = "display: none";
+            // a.href = dataUrl;
+            // a.download = 'test.wav';
+            // a.click();
+            // window.URL.revokeObjectURL(dataUrl);
+
+            // const options = {mimeType: 'audio/webm'};
+            // const recordedChunks = [];
+            // const mediaRecorder = new MediaRecorder(bytes, options);
+
+            // mediaRecorder.addEventListener('dataavailable', function(e) {
+            //     if (e.data.size > 0) {
+            //         recordedChunks.push(e.data);
+            //     }
+
+            //     if(shouldStop === true && stopped === false) {
+            //         mediaRecorder.stop();
+            //         stopped = true;
+            //     }
+            // });
+
+            // mediaRecorder.addEventListener('stop', function() {
+            //     downloadLink.href = URL.createObjectURL(new Blob(recordedChunks));
+            //     downloadLink.download = 'acetest.wav';
+            // });
+
+            // mediaRecorder.start();
+
+            context.decodeAudioData(arrayBuffer, function(bufferRet) {
+                buf = bufferRet;
+                play();
+            }, e => console.log(e));
+        }
+    </script>
+</body>
+</html>

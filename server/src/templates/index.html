@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>I don't know, you tell me</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <link rel="stylesheet" href="https://awwapp.com/static/widget/css/toolbar_style.css">
+</head>
+<body>
+    <input id="audio-code" type="text" />
+
+    <!-- <iframe id="apprtc" src="https://appr.tc/r/hi-Jim"></iframe> -->
+
+    <!-- Whiteboard -->
+    <div id="aww-wrapper" style="height: 100%; width: 100%;">
+    <!-- Element in which the whiteboard will be shown
+                – modify style as needed -->
+    </div>
+    <script src="https://awwapp.com/static/widget/js/aww3.min.js"></script>
+    <script type="text/javascript">
+    
+        var urlParams = new URLSearchParams(window.location.search);
+        
+        var aww = new AwwBoard('#aww-wrapper', {
+            apiKey: '646056bb-36e7-401d-a3af-1d4c2346711a',
+            boardLink: 'test-Jam',
+            autojoin: true,
+            sizes: [3, 5, 8, 13, 20],
+            fontSizes: [10, 12, 16, 22, 30],
+            menuOrder: ['colors', 'sizes', 'tools', 'admin',
+            'utils'],
+            tools: ['pencil', 'eraser', 'text', 'image'],
+            colors: [ "#000000", "#f44336", "#4caf50", "#2196f3",
+            "#ffc107", "#9c27b0",     "#e91e63", "#795548"],
+            defaultColor: "#000000",
+            defaultSize: 8,
+            defaultTool: 'pencil',
+            multiPage: true,
+            sendUserPointer: true,
+            showUserPointers: true
+        });
+        $.ajax({
+            'method': 'GET',
+            'url': 'https://awwapp.com/static/widget/sample_toolbar.html'
+          }).done(function(res, status) {
+            $('#aww-wrapper').append(res);
+            initToolbar();
+          });
+    </script>
+
+
+
+
+
+
+    <div style="display:none">
+    <audio id="player" controls></audio>
+    <input type="file" accept="audio/*" capture id="recorder">
+    <button id="btn" type="button">hi</button>
+
+    <button id="stopBtn">stop</button>
+
+    <div id="text"></div>
+
+    <a id="download">Download</a>
+<button id="stop">Stop</button>
+</div>
+
+    <script>
+        var mediaRecorder;
+        var socket = io();
+        const player = document.getElementById('player');
+        var video = document.querySelector('video');
+        var myScript = document.querySelector('script');
+        var range = document.querySelector('input');
+        var recorder = document.getElementById('recorder');
+        var context = new AudioContext();
+        var buf;
+
+        var fullChunks = [];
+
+        var chunks = [];
+
+        let shouldStop = false;
+        let stopped = false;
+        const downloadLink = document.getElementById('download');
+        const stopButton = document.getElementById('stop');
+
+        stopButton.addEventListener('click', function() {
+            shouldStop = true;
+        });
+
+        recorder.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const url = URL.createObjectURL(file);
+            console.log(url);
+            // Do something with the audio file.
+            player.src = url;
+        });
+
+        var first = true;
+
+        document.getElementById('btn').addEventListener('click', () => {});
+
+        
+    
+        const handleSuccess = function(stream) {
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.onstart = function(e) {
+                chunks = [];
+            };
+            mediaRecorder.ondataavailable = function(e) {
+                chunks.push(e.data);
+                fullChunks.push(e.data);
+                var blob = new Blob([e.data], { 'type' : 'audio/ogg; codecs=opus' });
+                socket.emit('radio', blob);
+            };
+            mediaRecorder.onstop = function(e) {
+                var blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
+                chunks = []
+                console.log(blob);
+                socket.emit('radio', blob);
+                mediaRecorder.start()
+            };
+
+            // Start recording
+            mediaRecorder.start();
+
+            //Stop recording after 5 seconds and broadcast it to server
+            setInterval(function() {
+                mediaRecorder.stop()
+            }, 1000);
+        };
+
+        // document.getElementById('stopBtn').addEventListener('click', () => {
+        //     var blob = new Blob(fullChunks, { 'type' : 'audio/wav; codecs=0' });
+        //     var audio = document.createElement('audio');
+        //     audio.src = window.URL.createObjectURL(blob);
+        //     //audio.play();  
+        //     // var downloadLink = document.getElementById('download');
+        //     // downloadLink.href = URL.createObjectURL(new Blob(fullChunks));
+        //     // downloadLink.download = 'acetest.wav';
+        //     // downloadLink.click();
+        // })
+
+        
+    
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(handleSuccess);
+        
+        // setInterval(() => {
+        //     document.getElementById('stopBtn').click()
+        // }, 1000);
+    </script>
+</body>
+</html>
